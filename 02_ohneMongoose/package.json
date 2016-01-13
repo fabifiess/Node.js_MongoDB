@@ -1,0 +1,15 @@
+{
+  "name": "mongonode",
+  "version": "0.0.1",
+  "description": "MongoDB + Node.js Example with Mongoose",
+  "main": "app.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "fabi",
+  "license": "ISC",
+  "dependencies": {
+    "express": "^4.13.3",
+    "mongodb": "^2.1.3"
+  }
+}
