@@ -133,31 +133,62 @@ MongoClient.connect(url, function (err, db) {
 
 
         function join1(callback) {
-            var joinedObjects_array = [];
-
-
-            joinObj(function () {
-
-                console.log("\njoinedObjects_array in callback function");
+            joinObj(function (joinedObjects_array) {
+                console.log("\njoinedObjects_array");
                 console.log(util.inspect(joinedObjects_array, {showHidden: false, depth: null}));
-
             });
 
             function joinObj(callback) {
-                db.collection('autos').find({}, {_id: 1, awards: 1}).forEach(function (newCar) {
-                    var joined = [];
-                    for (var i = 0; i < newCar.awards.length; i++) {
+                db.collection('autos').find({}, {_id: 1, awards: 1}).toArray(function (err_mainObject, mainObjects) {
+                    if (err_mainObject)console.log("Could not read from main object");
+                    if (!err_mainObject)for (var g = 0; g < mainObjects.length; g++) {
                         (function () {
-                            var j = i;
-                            db.collection('awards').find({_id: newCar.awards[j]}).toArray(function (err, results) {
-                                joined.push(results[0]);
+                            var mainObject_pos = g;
+                            var currentMainObject = mainObjects[mainObject_pos];
+                            var subObjects_length = currentMainObject.awards.length;
 
-                                if (j == newCar.awards.length - 1 && i < 11) {
-                                    newCar.awards = joined;
-                                    joinedObjects_array.push(newCar);
-                                    if (callback)callback(true); //ready
-                                }
+
+                            fetchSubObject(function (subObject) {
+                                currentMainObject.awards=subObject
+                                console.log("my1stJoinedObject:");
+                                console.log(util.inspect(currentMainObject, {showHidden: false, depth: null}));
                             });
+
+
+                            function fetchSubObject(next) {
+                                var joined = [];
+                                for (var i = 0; i < subObjects_length; i++) {
+                                    (function () {
+                                        var subObject_pos = i;
+                                        var oneOfTheSubObjects = mainObjects[mainObject_pos].awards[subObject_pos];
+                                        db.collection('awards').find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
+                                            if (err_subObject)console.log("Could not read from sub object");
+                                            if (!err_subObject) {
+                                                //console.log("mainObjects.length");
+                                                //console.log(mainObjects.length);
+                                                //console.log("mainObject[mainObject_pos].awards.length:");
+                                                //console.log(mainObjects[mainObject_pos].awards.length);
+                                                //console.log("mainObject_pos:");
+                                                //console.log(mainObject_pos);
+                                                //console.log("subObject_pos:");
+                                                //console.log(subObject_pos);
+                                                joined.push(subObjects[0]);
+                                                if (subObject_pos == subObjects_length - 1 && mainObject_pos == mainObjects.length - 1) {
+                                                    //console.log("joined");
+                                                    //console.log(joined);
+
+
+                                                    //newCar.awards = joined;
+                                                    //joinedObjects_array.push(newCar);
+
+
+                                                    if (next)next(joined);
+                                                }
+                                            }
+                                        });
+                                    })();
+                                }
+                            }
                         })();
                     }
                 });
@@ -165,8 +196,6 @@ MongoClient.connect(url, function (err, db) {
         }
 
         function showResult(callback) {
-            //console.log("joinedObjs2: ");
-            //console.log(joinedObjs);
             if (callback)callback();
         }
 
