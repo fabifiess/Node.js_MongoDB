@@ -133,63 +133,64 @@ MongoClient.connect(url, function (err, db) {
 
 
         function join1(callback) {
-            joinObj(function (joinedObjects_array) {
-                console.log("\njoinedObjects_array");
-                console.log(util.inspect(joinedObjects_array, {showHidden: false, depth: null}));
+            nestObjects(function () {
+                console.log("\ndanach");
+                if(callback)callback();
             });
 
-            function joinObj(callback) {
+            function nestObjects(callback) {
                 db.collection('autos').find({}, {_id: 1, awards: 1}).toArray(function (err_mainObject, mainObjects) {
                     if (err_mainObject)console.log("Could not read from main object");
-                    if (!err_mainObject)for (var g = 0; g < mainObjects.length; g++) {
-                        (function () {
-                            var mainObject_pos = g;
-                            var currentMainObject = mainObjects[mainObject_pos];
-                            var subObjects_length = currentMainObject.awards.length;
+                    if (!err_mainObject) {
 
 
-                            fetchSubObject(function (subObject) {
-                                currentMainObject.awards=subObject
-                                console.log("my1stJoinedObject:");
-                                console.log(util.inspect(currentMainObject, {showHidden: false, depth: null}));
-                            });
+                        var remedial_mainObjects = [];
+                        for (var g = 0; g < mainObjects.length; g++) {
+                            (function () {
+                                var mainObject_pos = g;
+                                var currentMainObject = mainObjects[mainObject_pos];
+                                var subObjects_length = currentMainObject.awards.length;
 
 
-                            function fetchSubObject(next) {
-                                var joined = [];
-                                for (var i = 0; i < subObjects_length; i++) {
-                                    (function () {
-                                        var subObject_pos = i;
-                                        var oneOfTheSubObjects = mainObjects[mainObject_pos].awards[subObject_pos];
-                                        db.collection('awards').find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
-                                            if (err_subObject)console.log("Could not read from sub object");
-                                            if (!err_subObject) {
-                                                //console.log("mainObjects.length");
-                                                //console.log(mainObjects.length);
-                                                //console.log("mainObject[mainObject_pos].awards.length:");
-                                                //console.log(mainObjects[mainObject_pos].awards.length);
-                                                //console.log("mainObject_pos:");
-                                                //console.log(mainObject_pos);
-                                                //console.log("subObject_pos:");
-                                                //console.log(subObject_pos);
-                                                joined.push(subObjects[0]);
-                                                if (subObject_pos == subObjects_length - 1 && mainObject_pos == mainObjects.length - 1) {
-                                                    //console.log("joined");
-                                                    //console.log(joined);
+                                fetchASubObject(constructNewMainObject);
 
 
-                                                    //newCar.awards = joined;
-                                                    //joinedObjects_array.push(newCar);
-
-
-                                                    if (next)next(joined);
+                                function fetchASubObject(callback) {
+                                    var joined_subObjects = [];
+                                    for (var i = 0; i < subObjects_length; i++) {
+                                        (function () {
+                                            var subObject_pos = i;
+                                            var oneOfTheSubObjects = currentMainObject.awards[subObject_pos];
+                                            db.collection('awards').find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
+                                                if (err_subObject)console.log("Could not read from sub object");
+                                                if (!err_subObject) {
+                                                    joined_subObjects.push(subObjects[0]);
+                                                    if (subObject_pos == subObjects_length - 1) { // parsed every subobject at the given field of the main object
+                                                        if (callback)callback(joined_subObjects);
+                                                    }
                                                 }
-                                            }
-                                        });
-                                    })();
+                                            });
+                                        })();
+                                    }
                                 }
-                            }
-                        })();
+
+
+                                function constructNewMainObject(subObject) {
+                                    currentMainObject.awards = subObject;
+                                    remedial_mainObjects.push(currentMainObject);
+
+                                    if (mainObject_pos == mainObjects.length - 1) { // parsed every main object
+                                        mainObjects=remedial_mainObjects;
+                                        console.log("Whole Object:");
+                                        console.log(util.inspect(mainObjects, {
+                                            showHidden: false,
+                                            depth: null
+                                        }));
+                                        if(callback) callback();
+                                    }
+                                }
+                            })();
+                        }
                     }
                 });
             }
