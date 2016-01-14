@@ -133,9 +133,28 @@ MongoClient.connect(url, function (err, db) {
 
 
         function join1(callback) {
+
+            var join_instructions = {
+                "autos": {
+                    "awards": "awards" // Field_of_mainObject : name_of_subobject_to_be_nested_into_mainObject
+                }
+            }
+
+            var mainCollection_name = Object.keys(join_instructions)[0]; // "autos"
+            var mainCollection_content=join_instructions[mainCollection_name]; // { awards: 'awards', dealers: 'Carseller' }
+
+            var objectKeys = Object.keys(join_instructions[mainCollection_name]); // ["awards","dealers"] -> left from ':' (Placeholders in main object)
+            var objectValues=[];
+            for (var i = 0; i < objectKeys.length; i++) {
+                objectValues[i]=mainCollection_content[objectKeys[i]]; // objectValues -> ["awards","dealers"] -> right from ':' (name of collection of subobject)
+            }
+
+            //console.log(objectValues);
+
+
             nestObjects(function () {
                 console.log("\ndanach");
-                if(callback)callback();
+                if (callback)callback();
             });
 
             function nestObjects(callback) {
@@ -180,13 +199,13 @@ MongoClient.connect(url, function (err, db) {
                                     remedial_mainObjects.push(currentMainObject);
 
                                     if (mainObject_pos == mainObjects.length - 1) { // parsed every main object
-                                        mainObjects=remedial_mainObjects;
+                                        mainObjects = remedial_mainObjects;
                                         console.log("Whole Object:");
                                         console.log(util.inspect(mainObjects, {
                                             showHidden: false,
                                             depth: null
                                         }));
-                                        if(callback) callback();
+                                        if (callback) callback();
                                     }
                                 }
                             })();
