@@ -106,13 +106,11 @@ MongoClient.connect(url, function (err, db) {
     function mongoJoins(callback) {
 
         insertMoreCars(function () {  // 1. INSERT more cars
-            //selectCar(function () {   // SELECT
-            join1(function () {   // 2. imitate SQL JOINs
+            join(join_instructions, function () {   // 2. imitate SQL JOINs
                 showResult(function () {
                     if (callback) callback();
                 })
             })
-            //})
         })
 
         // 1. INSERT more cars
@@ -131,45 +129,51 @@ MongoClient.connect(url, function (err, db) {
         }
 
 
-
-        function join1(callback) {
-
-            var join_instructions = {
-                "autos": {
-                    "awards": "awards" // Field_of_mainObject : name_of_subobject_to_be_nested_into_mainObject
-                }
+        var join_instructions = {
+            "autos": {
+                "dealers": "dealers" // Field_of_mainObject : name_of_subobject_to_be_nested_into_mainObject
+                //"dealers":"dealers"
             }
+        }
 
+        function join(join_instructions, callback) {
+
+
+            // parse JSON
             var mainCollection_name = Object.keys(join_instructions)[0]; // "autos"
-            var mainCollection_content=join_instructions[mainCollection_name]; // { awards: 'awards', dealers: 'Carseller' }
-
-            var objectKeys = Object.keys(join_instructions[mainCollection_name]); // ["awards","dealers"] -> left from ':' (Placeholders in main object)
-            var objectValues=[];
-            for (var i = 0; i < objectKeys.length; i++) {
-                objectValues[i]=mainCollection_content[objectKeys[i]]; // objectValues -> ["awards","dealers"] -> right from ':' (name of collection of subobject)
+            var mainCollection_content = join_instructions[mainCollection_name]; // { awards: 'awards', dealers:
+                                                                                 // 'Carseller' }
+            var mainObject_placeholder = Object.keys(join_instructions[mainCollection_name]); // ["awards","dealers"]
+                                                                                              // -> left from
+            // ':' (Placeholders in main object)
+            var subObject_collectionName = [];
+            for (var i = 0; i < mainObject_placeholder.length; i++) {
+                subObject_collectionName[i] = mainCollection_content[mainObject_placeholder[i]]; // objectValues ->
+                                                                                                 // ["awards","dealers"]
+                                                                                                 // ->
+                // right from ':' (coll. name of subobject)
             }
 
-            //console.log(objectValues);
 
+            nestObjects();
 
-            nestObjects(function () {
-                console.log("\ndanach");
-                if (callback)callback();
-            });
-
-            function nestObjects(callback) {
-                db.collection('autos').find({}, {_id: 1, awards: 1}).toArray(function (err_mainObject, mainObjects) {
+            function nestObjects() {
+                db.collection(mainCollection_name).find({}, {}).toArray(function (err_mainObject, mainObjects) {
                     if (err_mainObject)console.log("Could not read from main object");
                     if (!err_mainObject) {
-
-
                         var remedial_mainObjects = [];
                         for (var g = 0; g < mainObjects.length; g++) {
                             (function () {
                                 var mainObject_pos = g;
                                 var currentMainObject = mainObjects[mainObject_pos];
-                                var subObjects_length = currentMainObject.awards.length;
 
+                                console.log("currentMainObject[mainObject_placeholder]:");
+                                console.log(currentMainObject[mainObject_placeholder]);
+
+                                var subObjects_length = currentMainObject[mainObject_placeholder].length;
+
+                                console.log("subObjects_length");
+                                console.log(subObjects_length);
 
                                 fetchASubObject(constructNewMainObject);
 
@@ -179,8 +183,9 @@ MongoClient.connect(url, function (err, db) {
                                     for (var i = 0; i < subObjects_length; i++) {
                                         (function () {
                                             var subObject_pos = i;
-                                            var oneOfTheSubObjects = currentMainObject.awards[subObject_pos];
-                                            db.collection('awards').find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
+                                            var oneOfTheSubObjects = currentMainObject[mainObject_placeholder][subObject_pos];
+
+                                            db.collection(subObject_collectionName[0]).find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
                                                 if (err_subObject)console.log("Could not read from sub object");
                                                 if (!err_subObject) {
                                                     joined_subObjects.push(subObjects[0]);
@@ -195,7 +200,7 @@ MongoClient.connect(url, function (err, db) {
 
 
                                 function constructNewMainObject(subObject) {
-                                    currentMainObject.awards = subObject;
+                                    currentMainObject[mainObject_placeholder] = subObject;
                                     remedial_mainObjects.push(currentMainObject);
 
                                     if (mainObject_pos == mainObjects.length - 1) { // parsed every main object
@@ -265,7 +270,7 @@ var polo = {
     preis: 15000,
     similarCars: ["c3, c4"],
     awards: ["a1"],
-    dealer: ["dealer1", "dealer2"]
+    dealers: ["d1", "d2"]
 };
 
 var adam = {
@@ -277,12 +282,8 @@ var adam = {
     tuev: true,
     tags: ["hoppelt noch nicht"],
     preis: 9000,
-    similarCars: {
-        $ref: "autos",
-        $id: ["c1", "c2"],
-        $db: "test"
-    }, // Kurzform: DBRef("autos", "01,02", "test");
-    dealer: ["dealer1"],
+    similarCars: ["c1", "c2"],
+    dealers: ["d1"],
     awards: ["a2", "a1"]
 };
 
