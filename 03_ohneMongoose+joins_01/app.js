@@ -118,7 +118,7 @@ MongoClient.connect(url, function (err, db) {
             // INSERT INTO autos ('marke', 'modell') VALUES ('VW', 'Golf');
             db.collection('autos').insert([polo, adam], function (err) {
                 if (!err)console.log("1. Inserted more documents into the autos collection.");
-                db.collection('dealers').insert([dealer1, dealer2], function (err) {
+                db.collection('dealers').insert([dealer1, dealer2, dealer3], function (err) {
                     if (!err)console.log("2. Inserted documents into the dealers collection.");
                     db.collection('awards').insert([award1, award2], function (err) {
                         if (!err)console.log("3. Inserted documents into the awards collection.");
@@ -131,8 +131,8 @@ MongoClient.connect(url, function (err, db) {
 
         var join_instructions = {
             "autos": {
-                "dealers": "dealers" // Field_of_mainObject : name_of_subobject_to_be_nested_into_mainObject
-                //"dealers":"dealers"
+                "dealers": "dealers", // Field_of_mainObject : name_of_subobject_to_be_nested_into_mainObject
+                "awards": "awards"
             }
         }
 
@@ -143,74 +143,169 @@ MongoClient.connect(url, function (err, db) {
             var mainCollection_name = Object.keys(join_instructions)[0]; // "autos"
             var mainCollection_content = join_instructions[mainCollection_name]; // { awards: 'awards', dealers:
                                                                                  // 'Carseller' }
-            var mainObject_placeholder = Object.keys(join_instructions[mainCollection_name]); // ["awards","dealers"]
-                                                                                              // -> left from
+            var subObject_placeholders = Object.keys(join_instructions[mainCollection_name]); // ["awards","dealers"]
+            // -> left from
             // ':' (Placeholders in main object)
-            var subObject_collectionName = [];
-            for (var i = 0; i < mainObject_placeholder.length; i++) {
-                subObject_collectionName[i] = mainCollection_content[mainObject_placeholder[i]]; // objectValues ->
-                                                                                                 // ["awards","dealers"]
-                                                                                                 // ->
+
+            console.log("\n1. subObject_placeholders");
+            console.log(subObject_placeholders);
+            console.log("2. subObject_placeholders.length");
+            console.log(subObject_placeholders.length);
+
+            var subObject_collectionNames = [];
+            for (var i = 0; i < subObject_placeholders.length; i++) {
+
+                subObject_collectionNames[i] = mainCollection_content[subObject_placeholders[i]]; // objectValues ->
+                // ["awards","dealers"]
+                // ->
                 // right from ':' (coll. name of subobject)
+
+                console.log("3. Name of the collection " + i + " where the subobject is saved in (according to JSON)");
+                console.log(subObject_collectionNames[i]);
             }
 
 
-            nestObjects();
+            nestObjects(function (nestedObjects) {
+                console.log("\n*+*+*+*+*+\n13. Whole Object:\n*+*+*+*+*+\n");
+                console.log(util.inspect(nestedObjects, {
+                    showHidden: false,
+                    depth: null
+                }));
+            });
 
-            function nestObjects() {
-                db.collection(mainCollection_name).find({}, {}).toArray(function (err_mainObject, mainObjects) {
+            function nestObjects(callback) {
+
+                db.collection(mainCollection_name).find({}, {
+                    _id: 1,
+                    dealers: 1,
+                    awards: 1
+                }).toArray(function (err_mainObject, mainObjects) {
                     if (err_mainObject)console.log("Could not read from main object");
                     if (!err_mainObject) {
                         var remedial_mainObjects = [];
                         for (var g = 0; g < mainObjects.length; g++) {
                             (function () {
                                 var mainObject_pos = g;
+                                console.log("\n---------------\n4. mainObject number: " + mainObject_pos + "\n---------------");
                                 var currentMainObject = mainObjects[mainObject_pos];
 
-                                console.log("currentMainObject[mainObject_placeholder]:");
-                                console.log(currentMainObject[mainObject_placeholder]);
+                                console.log("\n5. currentMainObject (" + mainObject_pos + "): ");
+                                console.log(currentMainObject);
 
-                                var subObjects_length = currentMainObject[mainObject_placeholder].length;
+                                console.log("\n6. subObject_placeholders (at main object " + mainObject_pos + "): (according to JSON): " + subObject_placeholders);
 
-                                console.log("subObjects_length");
-                                console.log(subObjects_length);
+                                console.log("\n**********\n7. schleife\n**********\n");
 
-                                fetchASubObject(constructNewMainObject);
+                                var joined_subObjects = [];
+                                for (var x = 0; x < subObject_placeholders.length; x++) {
+                                    (function () {
+                                        var l = x;
+
+                                        console.log("7.1. subObject_placeholders[" + l + "]: " + subObject_placeholders[l]);
+                                        var current_subObject_placeholderooo = subObject_placeholders[l]; // e. g.
+                                                                                                          // "dealers"
+                                        // or "awards"
+
+                                        console.log("8. current_subObject_placeholders at main object " + mainObject_pos + ": (according to main object): " + current_subObject_placeholderooo); // [ 'd1', 'd2' ]
+
+                                        var current_subObject_placeholders = currentMainObject[current_subObject_placeholderooo/*[mainObject_pos]*/]; // e. g. currentMainObject['dealers'] -> d1,d2
+
+                                        console.log("Values of the object '" + subObject_placeholders[l] + "': " + current_subObject_placeholders); // e. g. d1,d2
 
 
-                                function fetchASubObject(callback) {
-                                    var joined_subObjects = [];
-                                    for (var i = 0; i < subObjects_length; i++) {
-                                        (function () {
-                                            var subObject_pos = i;
-                                            var oneOfTheSubObjects = currentMainObject[mainObject_placeholder][subObject_pos];
+                                        var joined_subObjectsooo = [];
 
-                                            db.collection(subObject_collectionName[0]).find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
-                                                if (err_subObject)console.log("Could not read from sub object");
-                                                if (!err_subObject) {
-                                                    joined_subObjects.push(subObjects[0]);
-                                                    if (subObject_pos == subObjects_length - 1) { // parsed every subobject at the given field of the main object
-                                                        if (callback)callback(joined_subObjects);
-                                                    }
+                                        for (y = 0; y < current_subObject_placeholders.length; y++) {
+                                            (function () {
+                                                var z = y;
+                                                //var subObject_pos = l;
+
+                                                var oneOfTheSubObjects = current_subObject_placeholders[z]; // e. g.
+                                                                                                            // 'd1' or
+                                                                                                            // 'd2'
+                                                console.log("Extracted values of the main object " + mainObject_pos + "'s sub object '" + subObject_placeholders[l] + "': " + oneOfTheSubObjects); // e. g. 'd1' or 'd2'
+                                                console.log("Going to look up collection " + l + " ('" + subObject_collectionNames[l] + "')"); // e. g. dealers or awards
+
+
+                                                fetchASubObject(constructNewMainObject);
+                                                function fetchASubObject(callback) {
+
+
+                                                    // z. B. db.collection('dealers').find({_id: 'd1'}).toArray(function
+                                                    // (err_subObject, subObjects) {
+                                                    db.collection(subObject_collectionNames[l]).find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
+                                                        if (err_subObject)console.log("Could not read from sub object");
+                                                        if (!err_subObject) {
+                                                            subObjects[0].sign="collection";
+                                                            joined_subObjects.push(subObjects[0]);
+
+                                                            joined_subObjectsooo.push(subObjects[0]);
+                                                            console.log("xxxxxxxxxxxxx\njoined_subObjectsooo");
+                                                            console.log(joined_subObjectsooo);
+
+
+                                                            //console.log("\n10. Main Object " + mainObject_pos + " /
+                                                            // SubObject " + l + " ('" + subObject_collectionNames[l] +
+                                                            // "'): Pushed to joined_subobjects array: ");
+                                                            // console.log(subObjects[0]); // e. g. { _id: 'd1', name:
+                                                            // 'Autohaus Maier', town: 'Stuttgart' }
+
+                                                            //console.log("\njoined_subObjects: ");
+                                                            //console.log(joined_subObjects);
+                                                            var maxZ = current_subObject_placeholders.length - 1;
+                                                            console.log("z ist " + z + " (max length of subobject (array) ('" + subObject_collectionNames[l] + "'): " + maxZ + ")");
+
+                                                            if (z == current_subObject_placeholders.length - 1 && l == subObject_placeholders.length - 1) { // parsed every subobject at the given field of the main object
+
+
+
+                                                                //console.log("\n11. Main Object " + mainObject_pos + "
+                                                                // / SubObject " + l + " ('" +
+                                                                // subObject_collectionNames[l] + "'): All sub objects
+                                                                // been read."); console.log("joined_subObjects: ");
+                                                                // console.log(joined_subObjects);
+
+                                                                if (l == subObject_placeholders.length - 1) {
+                                                                    console.log("\nöööööööööö\nhuhu 1\nöööööööööö\n");
+                                                                    //console.log("\nüüüüüüüüüüüüüü\njoined_subObjects:");
+                                                                    //console.log(joined_subObjects);
+                                                                    if (callback)callback(joined_subObjects, current_subObject_placeholderooo);
+
+                                                                    if (mainObject_pos == mainObjects.length - 1) {
+                                                                        console.log("\nöööööööööö\nhuhu 2\nöööööööööö\n");
+                                                                    }
+                                                                }
+                                                            }
+                                                        }
+                                                    });
                                                 }
-                                            });
-                                        })();
-                                    }
+                                            })();
+                                        }
+                                    })();
                                 }
 
+                                function constructNewMainObject(subObject, destination) {
 
-                                function constructNewMainObject(subObject) {
-                                    currentMainObject[mainObject_placeholder] = subObject;
+
+
+                                    //console.log("\n+++++++++++++\nhi " + ++hi + "\n+++++++++++++\n");
+                                    //console.log("\n12. joined_subObject received at function constructNewMainObject: ");
+                                    //console.log(subObject);
+
+
+                                    currentMainObject[destination] = subObject;
                                     remedial_mainObjects.push(currentMainObject);
+
+                                    console.log("\nremedial_mainObjects");
+                                    console.log(util.inspect(remedial_mainObjects, {
+                                        showHidden: false,
+                                        depth: null
+                                    }));
 
                                     if (mainObject_pos == mainObjects.length - 1) { // parsed every main object
                                         mainObjects = remedial_mainObjects;
-                                        console.log("Whole Object:");
-                                        console.log(util.inspect(mainObjects, {
-                                            showHidden: false,
-                                            depth: null
-                                        }));
-                                        if (callback) callback();
+
+                                        if (callback) callback(mainObjects);
                                     }
                                 }
                             })();
@@ -254,7 +349,7 @@ var multivan = {
     farbe: "Blau",
     baujahr: 2011,
     tuev: true,
-    tags: ["Bulli", "liebling von allen"],
+    tags: ["Bulli", "Retro"],
     preis: 20000,
     awards: ["a1"]
 };
@@ -283,20 +378,26 @@ var adam = {
     tags: ["hoppelt noch nicht"],
     preis: 9000,
     similarCars: ["c1", "c2"],
-    dealers: ["d1"],
-    awards: ["a2", "a1"]
+    awards: ["a2"],
+    dealers: ["d1"]
 };
 
 var dealer1 = {
     _id: "d1",
-    name: "Autohaus Maier",
+    name: "Auto Maier",
     town: "Stuttgart"
 };
 
 var dealer2 = {
     _id: "d2",
-    name: "Gebrauchtwagen-Schneider",
-    town: "Ludwigsburg"
+    name: "Used Cars",
+    town: "Lubu"
+};
+
+var dealer3 = {
+    _id: "d3",
+    name: "Mafia",
+    town: "San Juán"
 };
 
 var award1 = {
