@@ -107,9 +107,7 @@ MongoClient.connect(url, function (err, db) {
 
         insertMoreCars(function () {  // 1. INSERT more cars
             join(join_instructions, function () {   // 2. imitate SQL JOINs
-                showResult(function () {
-                    if (callback) callback();
-                })
+                if (callback) callback();
             })
         })
 
@@ -137,8 +135,6 @@ MongoClient.connect(url, function (err, db) {
         }
 
         function join(join_instructions, callback) {
-
-
             // parse JSON
             var mainCollection_name = Object.keys(join_instructions)[0]; // "autos"
             var mainCollection_content = join_instructions[mainCollection_name]; // { awards: 'awards', dealers:
@@ -164,17 +160,16 @@ MongoClient.connect(url, function (err, db) {
                 console.log(subObject_collectionNames[i]);
             }
 
-
             nestObjects(function (nestedObjects) {
                 console.log("\n*+*+*+*+*+\n13. Whole Object:\n*+*+*+*+*+\n");
                 console.log(util.inspect(nestedObjects, {
                     showHidden: false,
                     depth: null
                 }));
+                if (callback)callback(nestedObjects);
             });
 
             function nestObjects(callback) {
-
                 db.collection(mainCollection_name).find({}, {
                     _id: 1,
                     dealers: 1,
@@ -188,32 +183,22 @@ MongoClient.connect(url, function (err, db) {
                                 var mainObject_pos = g;
                                 console.log("\n---------------\n4. mainObject number: " + mainObject_pos + "\n---------------");
                                 var currentMainObject = mainObjects[mainObject_pos];
-
                                 console.log("\n5. currentMainObject (" + mainObject_pos + "): ");
                                 console.log(currentMainObject);
-
                                 console.log("\n6. subObject_placeholders (at main object " + mainObject_pos + "): (according to JSON): " + subObject_placeholders);
-
                                 console.log("\n**********\n7. schleife\n**********\n");
 
                                 var joined_subObjects = [];
                                 for (var x = 0; x < subObject_placeholders.length; x++) {
                                     (function () {
                                         var l = x;
-
                                         console.log("7.1. subObject_placeholders[" + l + "]: " + subObject_placeholders[l]);
                                         var current_subObject_placeholderooo = subObject_placeholders[l]; // e. g.
                                                                                                           // "dealers"
                                         // or "awards"
-
                                         console.log("8. current_subObject_placeholders at main object " + mainObject_pos + ": (according to main object): " + current_subObject_placeholderooo); // [ 'd1', 'd2' ]
-
                                         var current_subObject_placeholders = currentMainObject[current_subObject_placeholderooo/*[mainObject_pos]*/]; // e. g. currentMainObject['dealers'] -> d1,d2
-
                                         console.log("Values of the object '" + subObject_placeholders[l] + "': " + current_subObject_placeholders); // e. g. d1,d2
-
-
-                                        var joined_subObjectsooo = [];
 
                                         for (y = 0; y < current_subObject_placeholders.length; y++) {
                                             (function () {
@@ -221,28 +206,20 @@ MongoClient.connect(url, function (err, db) {
                                                 //var subObject_pos = l;
 
                                                 var oneOfTheSubObjects = current_subObject_placeholders[z]; // e. g.
-                                                                                                            // 'd1' or
+                                                                                                            // 'd1'
+                                                                                                            // or//
                                                                                                             // 'd2'
                                                 console.log("Extracted values of the main object " + mainObject_pos + "'s sub object '" + subObject_placeholders[l] + "': " + oneOfTheSubObjects); // e. g. 'd1' or 'd2'
                                                 console.log("Going to look up collection " + l + " ('" + subObject_collectionNames[l] + "')"); // e. g. dealers or awards
 
-
-                                                fetchASubObject(constructNewMainObject);
-                                                function fetchASubObject(callback) {
-
-
+                                                fetchASubObject();
+                                                function fetchASubObject() {
                                                     // z. B. db.collection('dealers').find({_id: 'd1'}).toArray(function
                                                     // (err_subObject, subObjects) {
                                                     db.collection(subObject_collectionNames[l]).find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
                                                         if (err_subObject)console.log("Could not read from sub object");
                                                         if (!err_subObject) {
-                                                            subObjects[0].sign="collection";
                                                             joined_subObjects.push(subObjects[0]);
-
-                                                            joined_subObjectsooo.push(subObjects[0]);
-                                                            console.log("xxxxxxxxxxxxx\njoined_subObjectsooo");
-                                                            console.log(joined_subObjectsooo);
-
 
                                                             //console.log("\n10. Main Object " + mainObject_pos + " /
                                                             // SubObject " + l + " ('" + subObject_collectionNames[l] +
@@ -252,12 +229,23 @@ MongoClient.connect(url, function (err, db) {
 
                                                             //console.log("\njoined_subObjects: ");
                                                             //console.log(joined_subObjects);
-                                                            var maxZ = current_subObject_placeholders.length - 1;
-                                                            console.log("z ist " + z + " (max length of subobject (array) ('" + subObject_collectionNames[l] + "'): " + maxZ + ")");
 
-                                                            if (z == current_subObject_placeholders.length - 1 && l == subObject_placeholders.length - 1) { // parsed every subobject at the given field of the main object
+                                                            //var maxZ = current_subObject_placeholders.length - 1;
+                                                            //console.log("z ist " + z + " (max length of subobject
+                                                            // (array) ('" + subObject_collectionNames[l] + "'): " +
+                                                            // maxZ + ")");
+
+                                                            if (z == current_subObject_placeholders.length - 1 /*&& l == subObject_placeholders.length - 1*/) { // parsed every subobject at the given field of the main object
 
 
+                                                                currentMainObject[current_subObject_placeholderooo] = joined_subObjects;
+                                                                joined_subObjects = [];
+
+                                                                //console.log("\nremedial_mainObjects");
+                                                                //console.log(util.inspect(remedial_mainObjects, {
+                                                                //    showHidden: false,
+                                                                //    depth: null
+                                                                //}));
 
                                                                 //console.log("\n11. Main Object " + mainObject_pos + "
                                                                 // / SubObject " + l + " ('" +
@@ -266,13 +254,11 @@ MongoClient.connect(url, function (err, db) {
                                                                 // console.log(joined_subObjects);
 
                                                                 if (l == subObject_placeholders.length - 1) {
-                                                                    console.log("\nöööööööööö\nhuhu 1\nöööööööööö\n");
-                                                                    //console.log("\nüüüüüüüüüüüüüü\njoined_subObjects:");
-                                                                    //console.log(joined_subObjects);
-                                                                    if (callback)callback(joined_subObjects, current_subObject_placeholderooo);
-
+                                                                    remedial_mainObjects.push(currentMainObject);
+                                                                    // console.log("\nüüüüüüüüüüüüüü\njoined_subObjects:");
+                                                                    // console.log(joined_subObjects);
                                                                     if (mainObject_pos == mainObjects.length - 1) {
-                                                                        console.log("\nöööööööööö\nhuhu 2\nöööööööööö\n");
+                                                                        if (callback)callback(remedial_mainObjects);
                                                                     }
                                                                 }
                                                             }
@@ -283,67 +269,17 @@ MongoClient.connect(url, function (err, db) {
                                         }
                                     })();
                                 }
-
-                                function constructNewMainObject(subObject, destination) {
-
-
-
-                                    //console.log("\n+++++++++++++\nhi " + ++hi + "\n+++++++++++++\n");
-                                    //console.log("\n12. joined_subObject received at function constructNewMainObject: ");
-                                    //console.log(subObject);
-
-
-                                    currentMainObject[destination] = subObject;
-                                    remedial_mainObjects.push(currentMainObject);
-
-                                    console.log("\nremedial_mainObjects");
-                                    console.log(util.inspect(remedial_mainObjects, {
-                                        showHidden: false,
-                                        depth: null
-                                    }));
-
-                                    if (mainObject_pos == mainObjects.length - 1) { // parsed every main object
-                                        mainObjects = remedial_mainObjects;
-
-                                        if (callback) callback(mainObjects);
-                                    }
-                                }
                             })();
                         }
                     }
                 });
             }
         }
-
-        function showResult(callback) {
-            if (callback)callback();
-        }
-
-
-        // SELECT
-        function selectCar(callback) {
-            // SELECT modell, farbe FROM autos WHERE marke = 'VW' (Auto -> DB Model)
-            db.collection('autos').find(
-                {},                      // WHERE ...
-                {modell: 1, farbe: 1, similarCars: 1}).toArray(
-                function (err, result) {
-                    if (!err) {
-                        console.log('SELECTED:');
-                        console.log(result);
-                    }
-                    if (callback) callback();
-                }
-            )
-        }
-
-
-
     }
-
 });
 
 var multivan = {
-    _id: "c1", // muss nicht zwingend angegeben werden, ansonsten:  "_id": ObjectID("568f7397d8629deb04edf396") o. Ä
+    _id: "c1",
     marke: "VW",
     modell: "Multivan",
     farbe: "Blau",
