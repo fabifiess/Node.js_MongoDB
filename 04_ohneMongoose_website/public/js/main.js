@@ -1,3 +1,24 @@
 /**
- * Created by Fabi on 25.02.16.
+ * play.html
  */
+
+// insert sample data
+
+$('#input_button').unbind().click(function () {
+    var data = {
+        email: $('#input_email').val(),
+        name: $('#input_name').val(),
+        scores: $('#input_scores').val(),
+        level: $('#input_level').val()
+    }
+    console.log(data);
+    socket.emit("testplayer",data);
+});
+
+/**
+ * login.html
+ */
+
+// form validation
+
+// http://bv.doc.javake.cn/getting-started/

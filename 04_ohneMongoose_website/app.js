@@ -19,11 +19,6 @@ http.listen(port, function () {
     console.log('listening on port ' + port);
 });
 
-// Socket.io: Communication Server <-> Client(s)
-io.on('connection', function (socket) {
-
-});
-
 
 
 // Database "test", Collection "autos"
@@ -32,21 +27,51 @@ MongoClient.connect(url, function (err, db) {
     console.log("Connected to DB");
 
 
-    // explicit async order
-    insertCar(function () {                       // 1. INSERT
-        selectCar(function () {                   // SELECT
-            updateCar(function () {               // 2. UPDATE
-                selectCar(function () {           // SELECT
-                    deleteCar(function () {       // 3. DELETE
-                        selectCar(function () {   // SELECT
-                            db.close();
-                        })
-                    })
-
-                })
-            })
-        })
+    // Socket.io: Communication Server <-> Client(s)
+    io.on('connection', function (socket) {
+        socket.on("testplayer", function (data) {
+            console.log(data);
+            // explicit async order
+            insertPlayer(data, function () {                       // 1. INSERT
+                selectPlayer(function () {                   // SELECT
+                    //db.close();
+                });
+            });
+        });
     });
+
+    // 1. INSERT
+    function insertPlayer(data, callback) {
+        // INSERT INTO Autos ('marke', 'modell') VALUES ('VW', 'Golf');
+        db.collection('players').insert(data, function (err) {
+            if (!err)console.log("Inserted a document into the players collection.");
+            if (callback) callback();
+        });
+    }
+
+    // SELECT
+    function selectPlayer(callback) {
+        // SELECT modell, farbe FROM Auto WHERE marke = 'VW' (Auto -> DB Model)
+        db.collection('players').find(
+            {name: "Fabi"},            // WHERE ...
+            {email: 1, name: 1, password: 1, scores: 1, level: 1}).toArray(
+            function (err, result) {
+                if (!err) {
+                    console.log('SELECTED:');
+                    console.log(result);
+                }
+                if (callback) callback();
+            }
+        )
+    }
+
+
+
+
+
+
+
+
 
     // 1. INSERT
     function insertCar(callback) {
