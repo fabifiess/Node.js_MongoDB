@@ -175,7 +175,7 @@ MongoClient.connect(url, function (err, db) {
                     dealers: 1,
                     awards: 1
                 }).toArray(function (err_mainObject, mainObjects) {
-                    if (err_mainObject)console.log("Could not read from main object");
+                    if (err_mainObject)console.log("Could not read from main object (at pos. "+mainObject_pos+")");
                     if (!err_mainObject) {
                         var remedial_mainObjects = [];
                         for (var g = 0; g < mainObjects.length; g++) {
@@ -203,12 +203,8 @@ MongoClient.connect(url, function (err, db) {
                                         for (y = 0; y < current_subObject_placeholders.length; y++) {
                                             (function () {
                                                 var z = y;
-                                                //var subObject_pos = l;
-
-                                                var oneOfTheSubObjects = current_subObject_placeholders[z]; // e. g.
-                                                                                                            // 'd1'
-                                                                                                            // or//
-                                                                                                            // 'd2'
+                                                var oneOfTheSubObjects = current_subObject_placeholders[z]; // e.g. 'd1'
+                                                                                                            // or 'd2'
                                                 console.log("Extracted values of the main object " + mainObject_pos + "'s sub object '" + subObject_placeholders[l] + "': " + oneOfTheSubObjects); // e. g. 'd1' or 'd2'
                                                 console.log("Going to look up collection " + l + " ('" + subObject_collectionNames[l] + "')"); // e. g. dealers or awards
 
@@ -217,15 +213,16 @@ MongoClient.connect(url, function (err, db) {
                                                     // z. B. db.collection('dealers').find({_id: 'd1'}).toArray(function
                                                     // (err_subObject, subObjects) {
                                                     db.collection(subObject_collectionNames[l]).find({_id: oneOfTheSubObjects}).toArray(function (err_subObject, subObjects) {
-                                                        if (err_subObject)console.log("Could not read from sub object");
+                                                        if (err_subObject)console.log("Could not read from sub sub object " + z + " in the array in sub object '" + subObject_collectionNames[l] + "'");
                                                         if (!err_subObject) {
                                                             joined_subObjects.push(subObjects[0]);
 
-                                                            //console.log("\n10. Main Object " + mainObject_pos + " /
-                                                            // SubObject " + l + " ('" + subObject_collectionNames[l] +
-                                                            // "'): Pushed to joined_subobjects array: ");
-                                                            // console.log(subObjects[0]); // e. g. { _id: 'd1', name:
-                                                            // 'Autohaus Maier', town: 'Stuttgart' }
+                                                            console.log("\n10. Main Object " + mainObject_pos +
+                                                                        " / SubObject " + l + " ('" +
+                                                                        subObject_collectionNames[l] +
+                                                                        "'): Pushed to joined_subobjects array: ");
+                                                             console.log(subObjects[0]); // e.g. { _id: 'd1', name:
+                                                                                         // 'Auto M', town: 'St'}
 
                                                             //console.log("\njoined_subObjects: ");
                                                             //console.log(joined_subObjects);
@@ -301,7 +298,7 @@ var polo = {
     preis: 15000,
     similarCars: ["c3, c4"],
     awards: ["a1"],
-    dealers: ["d1", "d2"]
+    dealers: ["d1"]
 };
 
 var adam = {
@@ -314,7 +311,7 @@ var adam = {
     tags: ["hoppelt noch nicht"],
     preis: 9000,
     similarCars: ["c1", "c2"],
-    awards: ["a2"],
+    awards: ["a2","a2"],
     dealers: ["d1"]
 };
 
