@@ -19,8 +19,21 @@
     <link href="../css/styles.css" rel="stylesheet">
 </head>
 <body>
+<!--init socket.io-->
 <script src="../js/socket.io-1.4.5.js"></script>
 <script> var socket = io();</script>
+
+<!-- fill table dynamically-->
+<script>
+    $(document).ready(function(){
+        $('#highscore_table').append("<tr><td>Klara</td><td>4711</td><td>8828</td></tr>");
+
+        socket.emit("getHighscore","req");
+        socket.on("getHighscore",function(data){
+            console.log(data);
+        })
+    })
+</script>
 
 <div id="navbar"></div>
 
@@ -42,12 +55,12 @@
             <table class="table">
                 <thead>
                 <tr>
-                    <th>Firstname</th>
-                    <th>Lastname</th>
-                    <th>Email</th>
+                    <th>name</th>
+                    <th>scores</th>
+                    <th>level</th>
                 </tr>
                 </thead>
-                <tbody>
+                <tbody id="highscore_table">
                 <tr>
                     <td>John</td>
                     <td>Doe</td>

@@ -16,6 +16,15 @@ $('#input_button').unbind().click(function () {
 });
 
 /**
+ * highscore.html
+ */
+
+// generate table dynamically
+
+
+
+
+/**
  * login.html
  */
 

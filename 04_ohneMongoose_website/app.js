@@ -19,30 +19,28 @@ http.listen(port, function () {
     console.log('listening on port ' + port);
 });
 
+// Database "test", Collection "players"
+var mongo_url = 'mongodb://localhost:27017/test';
 
 
-// Database "test", Collection "autos"
-var url = 'mongodb://localhost:27017/test';
-MongoClient.connect(url, function (err, db) {
-    console.log("Connected to DB");
 
-
-    // Socket.io: Communication Server <-> Client(s)
-    io.on('connection', function (socket) {
-        socket.on("testplayer", function (data) {
-            console.log(data);
-            // explicit async order
-            insertPlayer(data, function () {                       // 1. INSERT
-                selectPlayer(function () {                   // SELECT
-                    //db.close();
+// Socket.io: Communication Server <-> Client(s)
+io.on('connection', function (socket) {
+    socket.on("testplayer", function (data) {
+        console.log(data);
+        MongoClient.connect(mongo_url, function (err, db) {
+            console.log("Connected to DB");
+            insertPlayer(db, data, function () {                       // 1. INSERT
+                selectPlayer(db, function () {                   // SELECT
+                    db.close();
                 });
             });
         });
     });
 
     // 1. INSERT
-    function insertPlayer(data, callback) {
-        // INSERT INTO Autos ('marke', 'modell') VALUES ('VW', 'Golf');
+    function insertPlayer(db, data, callback) {
+        // INSERT INTO players ('email', 'name',...) VALUES ('ff@ff.de', 'Fabi');
         db.collection('players').insert(data, function (err) {
             if (!err)console.log("Inserted a document into the players collection.");
             if (callback) callback();
@@ -50,8 +48,8 @@ MongoClient.connect(url, function (err, db) {
     }
 
     // SELECT
-    function selectPlayer(callback) {
-        // SELECT modell, farbe FROM Auto WHERE marke = 'VW' (Auto -> DB Model)
+    function selectPlayer(db, callback) {
+        // SELECT email, name FROM players WHERE name = 'Fabi'
         db.collection('players').find(
             {name: "Fabi"},            // WHERE ...
             {email: 1, name: 1, password: 1, scores: 1, level: 1}).toArray(
@@ -66,37 +64,6 @@ MongoClient.connect(url, function (err, db) {
     }
 
 
-
-
-
-
-
-
-
-    // 1. INSERT
-    function insertCar(callback) {
-        // INSERT INTO Autos ('marke', 'modell') VALUES ('VW', 'Golf');
-        db.collection('autos').insert(multivan, function (err) {
-            if (!err)console.log("Inserted a document into the autos collection.");
-            if (callback) callback();
-        });
-    }
-
-    // SELECT
-    function selectCar(callback) {
-        // SELECT modell, farbe FROM Auto WHERE marke = 'VW' (Auto -> DB Model)
-        db.collection('autos').find(
-            {marke: "VW"},            // WHERE ...
-            {modell: 1, farbe: 1}).toArray(
-            function (err, result) {
-                if (!err) {
-                    console.log('SELECTED:');
-                    console.log(result);
-                }
-                if (callback) callback();
-            }
-        )
-    }
 
     // 2. UPDATE
     function updateCar(callback) {
@@ -128,16 +95,15 @@ MongoClient.connect(url, function (err, db) {
         )
     }
 
+
+    socket.on("getHighscore", function(data){
+        console.log(data);
+        if(data=="req"){
+            socket.emit("getHighscore", "Table Data");
+        }
+    });
 });
 
-var multivan = {
-    marke: "VW",
-    modell: "Multivan",
-    farbe: "Blau",
-    baujahr: 2011,
-    tuev: true,
-    tags: ["Bulli", "gebraucht"],
-    preis: 20000
-};
+
 
 
