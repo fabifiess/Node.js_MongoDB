@@ -25,12 +25,14 @@
 
 <!-- fill table dynamically-->
 <script>
-    $(document).ready(function(){
-        $('#highscore_table').append("<tr><td>Klara</td><td>4711</td><td>8828</td></tr>");
-
-        socket.emit("getHighscore","req");
-        socket.on("getHighscore",function(data){
-            console.log(data);
+    $(document).ready(function () {
+        socket.emit("getHighscore", "req");
+        socket.on("getHighscore", function (data) {
+//            console.log(JSON.stringify(data));
+            for (var i = 0; i < data.length; i++) {
+                var tablerow = "<tr><td>" + data[i].name + "</td><td>" + data[i].scores + "</td><td>" + data[i].level + "</td></tr>";
+                $('#highscore_table').append(tablerow);
+            }
         })
     })
 </script>
@@ -62,20 +64,11 @@
                 </thead>
                 <tbody id="highscore_table">
                 <tr>
-                    <td>John</td>
-                    <td>Doe</td>
-                    <td>john@example.com</td>
+                    <td>Fabi</td>
+                    <td>4711</td>
+                    <td>6454</td>
                 </tr>
-                <tr>
-                    <td>Mary</td>
-                    <td>Moe</td>
-                    <td>mary@example.com</td>
-                </tr>
-                <tr>
-                    <td>July</td>
-                    <td>Dooley</td>
-                    <td>july@example.com</td>
-                </tr>
+
                 </tbody>
             </table>
         </div>
